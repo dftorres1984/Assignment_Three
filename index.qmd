@@ -43,6 +43,13 @@ Formatted_Freedom_House_2 <- Formatted_Freedom_House_2 %>% pivot_longer( cols = 
 #I shifted back the data 
 Formatted_Freedom_House_2 <- Formatted_Freedom_House_2 %>% pivot_wider(names_from = c(Variable), values_from = Data)
 
+#I had to check the columns to determine if they were numeric or character
+str(Formatted_Freedom_House_2)
+
+#I have to convert the new column Year into numeric
+Formatted_Freedom_House_2$Year <- as.numeric(Formatted_Freedom_House_2$Year)
+
+#confirm one more time before saving
 str(Formatted_Freedom_House_2)
 
 folder <- "DataCleanAndFormatted"
@@ -59,7 +66,7 @@ if(!dir.exists(folder)) {
 LIED <- rio::import("https://github.com/dftorres1984/Assignment_Three/raw/refs/heads/main/DataCleanAndFormatted/Formatted_LIED.RDS")
 Freedom_House <- rio::import("https://github.com/dftorres1984/Assignment_Three/raw/refs/heads/main/DataCleanAndFormatted/Formatted_Freedom_House.RDS")
 Freedom_House_2 <- rio::import("https://github.com/dftorres1984/Assignment_Three/raw/refs/heads/main/DataCleanAndFormatted/Formatted_Freedom_House_2.RDS")
-V_Dem <- read.csv("https://github.com/dftorres1984/Assignment_Three/raw/refs/heads/main/DataCleanAndFormatted/Formatted_V_Dem.RDS")
+V_Dem <- rio::import("https://github.com/dftorres1984/Assignment_Three/raw/refs/heads/main/DataCleanAndFormatted/Formatted_V_Dem.RDS")
 ```
 
 You can add options to executable code like this
@@ -95,6 +102,17 @@ print(unique_to_LIED_2)
 LIED$Country[LIED$Country == "Korea, South"] <- "South Korea" 
 V_Dem$Country[V_Dem$Country == "United States of America"] <- "United States"
 V_Dem$Country[V_Dem$Country == "Czechia"] <- "Czech Republic" 
+```
+
+```{r}
+
+#I decide to merge the Freedom House datasets first so they it unified dataset.    
+
+Freedom_House_merged <- full_join(Freedom_House_2, Freedom_House, by = c("Country", "Year"))
+
+# I then decide to unit the Freedom House dataset with LEAD.  
+
+Merged_FH_LIED <- merge(Merged_Freedom_House, LIED, by = c("Country", "Year"), all = TRUE)
 ```
 
 The `echo: false` option disables the printing of code (only output is displayed).
