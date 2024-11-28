@@ -37,19 +37,22 @@ Formatted_Freedom_House_2 <- subset(Formatted_Freedom_House_2, select = -`C/T?`)
 #Filter the countries to match the countries in LIED database.  
 Formatted_Freedom_House_2 <- Formatted_Freedom_House_2 %>% filter(Country %in% c("Greece", "Italy", "Austria", "United States", "South Korea", "Portugal", "Japan", "Belgium", "Czech Republic", "Spain", "United Kingdom", "Canada", "France", "Iceland", "Australia", "Germany", "Netherlands", "Ireland", "Finland", "Switzerland", "New Zealand", "Denmark", "Sweden", "Norway", "Hungary", "Poland", "Slovakia", "Estonia", "Latvia", "Lithuania", "Slovenia", "Cyprus", "Malta", "Bulgaria", "Romania", "Croatia"))
 
-#I shifted the columns longer so the years were now in a row
+#I shifted the columns longer so the years were now in one column 
 Formatted_Freedom_House_2 <- Formatted_Freedom_House_2 %>% pivot_longer( cols = !Country, names_to = c("Variable", "Year"), names_sep = "_", values_to = "Data")
 
-#I shifted back the data 
+#I shifted the data back to wider so I could line up the data with the correct years 
 Formatted_Freedom_House_2 <- Formatted_Freedom_House_2 %>% pivot_wider(names_from = c(Variable), values_from = Data)
 
-#I had to check the columns to determine if they were numeric or character
+#I rechecked the columns to determine if they were numeric or character
 str(Formatted_Freedom_House_2)
 
-#I have to convert the new column Year into numeric
+#I converted the new column Year into numeric
 Formatted_Freedom_House_2$Year <- as.numeric(Formatted_Freedom_House_2$Year)
 
-#confirm one more time before saving
+#I also converted Freedom_House_2 columns to match exactly the Freedom House columns
+Formatted_Freedom_House_2 <- Formatted_Freedom_House_2 %>% rename(`Political_Rights` = `Political Rights`, Civil_Liberties = `Civil Liberties`, `Total_Score` = `Total Score`)
+
+#I made one final confirmation before saving
 str(Formatted_Freedom_House_2)
 
 folder <- "DataCleanAndFormatted"
@@ -72,32 +75,24 @@ V_Dem <- rio::import("https://github.com/dftorres1984/Assignment_Three/raw/refs/
 You can add options to executable code like this
 
 ```{r}
-#I'm going to check for unique countries in the datasets. This will allow to compare the country names in two datasets, which allows me to determine which countries are missing  or spelled differently. 
+#I'm going to cross check for the Country column in each dataset, which allows me to determine which countries are missing or spelled differently. 
 
 countries_v_dem <- unique(V_Dem$Country)
 countries_freedom_house <- unique(Freedom_House$Country)
 unique_to_v_dem <- setdiff(countries_v_dem, countries_freedom_house)
-print("Unique to V_Dem:")
-
-print(unique_to_v_dem)
-unique_to_freedom_house <- setdiff(countries_freedom_house, countries_v_dem)
-print("Unique to Formatted_Freedom_House:")
-print(unique_to_freedom_house)
-common_countries <- intersect(countries_v_dem, countries_freedom_house)
-print("Common countries:")
-print(common_countries)
+print("Unique to V_Dem: v Freedom House")
 
 countries_LIED <- unique(LIED$Country)
 unique_to_LIED <- setdiff(countries_LIED, countries_freedom_house)
-print("Unique to LIED:Freedom_House")
+print("Unique to LIED v Freedom_House")
 print(unique_to_LIED)
 
-countries_LIED_2 <-unique(LIED$Country)
-unique_to_LIED_2 <- setdiff(countries_LIED_2, countries_v_dem)
-print("Unique to LIED_2:V_DEM")
+
+unique_to_LIED_2 <- setdiff(countries_LIED, countries_v_dem)
+print("Unique to LIED v V-Dem")
 print(unique_to_LIED_2)
 
-#Since I have 2 datasets from Freedom House, I'm going to change V_Dem's "United States of America" and "Czechia" to "United States" and "Czech Republic." And I'm going to change LIED's from "Korea, South" to "South Korea" to match the Freedom House datasets. This will allow for cleaner merge process.    
+#After checking, I decided to change V-Dem's "United States of America" and "Czechia" to "United States" and "Czech Republic." And I'm going to change LIED's dataset from "Korea, South" to "South Korea" to match the Freedom House datasets. This will allow for cleaner merge process.    
 
 LIED$Country[LIED$Country == "Korea, South"] <- "South Korea" 
 V_Dem$Country[V_Dem$Country == "United States of America"] <- "United States"
@@ -105,14 +100,17 @@ V_Dem$Country[V_Dem$Country == "Czechia"] <- "Czech Republic"
 ```
 
 ```{r}
+#First, I rbind the Freedom House datasets now that all of the columns are the same name and arrange the columns by Country and Year. 
 
-#I decide to merge the Freedom House datasets first so they it unified dataset.    
+Combined_FH_data <- rbind(Freedom_House_2, Freedom_House)
+Combined_FH_data <- Combined_FH_data %>% arrange(Country, Year)
 
-Freedom_House_merged <- full_join(Freedom_House_2, Freedom_House, by = c("Country", "Year"))
+# I then merge the Freedom House dataset with LEAD.  
 
-# I then decide to unit the Freedom House dataset with LEAD.  
+Merged_FH_LIED <- merge(Combined_FH_data, LIED, by = c("Country", "Year"), all = TRUE)
 
-Merged_FH_LIED <- merge(Merged_Freedom_House, LIED, by = c("Country", "Year"), all = TRUE)
+#I then make the final merge of the combined Freedom House and LIED dataset with V_Dem. 
+Final_Merge <- merge(Merged_FH_LIED, V_Dem, by = c("Country", "Year"), all = TRUE)
 ```
 
 The `echo: false` option disables the printing of code (only output is displayed).
